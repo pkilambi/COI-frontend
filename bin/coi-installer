@@ -1,0 +1,7 @@
+#!/usr/bin/python
+
+
+from coi.client.cli.base import COInstallerCLI
+
+if __name__ == "__main__":
+    COInstallerCLI()
