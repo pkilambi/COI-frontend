@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 
-from coi.client.cli.base import COInstallerCLI
+from coi.client.cli.base import setup_installer
 
 if __name__ == "__main__":
-    COInstallerCLI()
+    setup_installer()
