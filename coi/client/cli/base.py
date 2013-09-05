@@ -40,7 +40,7 @@ class BaseConfig(object):
 
             answer = raw_input(msg.read() + "[%s]" % default + ": ")
             if not len(answer):
-                if default:
+                if default is not None:
                     answer = default
                 else:
                     msg.close()
@@ -74,7 +74,8 @@ class BaseConfig(object):
             if ans:
                 doc_copy[key] = ans
         pprint.pprint(doc_copy)
-
+        self.write_yaml(doc_copy)
+    
     def load_yaml(self):
         """
          Load a yaml file and access data
@@ -83,12 +84,12 @@ class BaseConfig(object):
             doc = yaml.load(f)
         return doc
 
-    def write_yaml(self, data, yaml_out_file):
+    def write_yaml(self, data):
         """
          Writes the json to a yaml file
         """
-        with open(yaml_out_file, 'w') as yml:
-            yaml.dump(data, yml, allow_unicode=True)
+        with open(self.yaml_in_file, 'w') as yml:
+            yaml.dump(data, yml, default_flow_style=False)
 
 
 class GlobalConfig(BaseConfig):
@@ -108,7 +109,57 @@ class GlobalConfig(BaseConfig):
               {"prompt"  : "List of NTP Servers to use",
                "key"     : "ntp_server",
                "options" : None,
-               "default" : None,},]
+               "default" : None,},
+              {"prompt"  : "Verbose",
+               "key"     : "verbose",
+               "options" : None,
+               "default" : False,},
+              {"prompt"  : "What type of database you like to use?",
+               "key"     : "db_type",
+               "options" : ['mysql', 'postgres'],
+               "default" : 'mysql',},
+              {"prompt"  : "What rpc service type you like to use?",
+               "key"     : "rpc_type",
+               "options" : ['qpid', 'rabbitmq'],
+               "default" : 'rabbitmq',},
+              {"prompt"  : "Enable nova service?",
+               "key"     : "enable_nova",
+               "options" : ['y', 'n'],
+               "default" : 'y',},
+              {"prompt"  : "Enable network service?",
+               "key"     : "enable_network",
+               "options" : ['y', 'n'],
+               "default" : 'y',},
+              {"prompt"  : "Enable keystone service?",
+               "key"     : "enable_keystone",
+               "options" : ['y', 'n'],
+               "default" : 'y',},
+              {"prompt"  : "Enable glance service?",
+               "key"     : "enable_glance",
+               "options" : ['y', 'n'],
+               "default" : 'y',},
+              {"prompt"  : "Enable swift service?",
+               "key"     : "enable_swift",
+               "options" : ['y', 'n'],
+               "default" : 'y',},
+              {"prompt"  : "Enable cinder service?",
+               "key"     : "enable_cinder",
+               "options" : ['y', 'n'],
+               "default" : 'y',},
+              {"prompt"  : "Enable ceph service?",
+               "key"     : "enable_ceph",
+               "options" : ['y', 'n'],
+               "default" : 'y',},
+              {"prompt"  : "backend for cinder?",
+               "key"     : "cinder_backend",
+               "options" : ['iscsi',],
+               "default" : 'iscsi',},
+              {"prompt"  : "What type of networking should we use?",
+               "key"     : "network_type",
+               "options" : ['neutron', 'nova'],
+               "default" : 'neutron',},]
+
+
     message = "Global Configuration"
 
     def __init__(self, yaml_in_file='config.yaml'):
