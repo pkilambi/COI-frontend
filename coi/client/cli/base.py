@@ -57,21 +57,16 @@ class BaseConfig(object):
          generating questions, parsing the output and writing to
          a yaml file.
         """
+        doc = {}
         utils.print_ok(self.message)
-        doc = self.load_yaml()
-        for key, value in doc.items():
-            param = [i for i in self.params if key == i['key']]
-            if not param:
-                continue
-            param = param[0]
+        for param in self.params:
             ans = self.askme(param['prompt'],
                              suggestions=param['options'],
                              default=param['default'])
             if ans:
-                doc[key] = ans
-        #pprint.pprint(doc)
+                doc[param['key']] = ans
         self.write_yaml(doc)
-    
+
     def load_yaml(self):
         """
          Load a yaml file and access data
@@ -86,8 +81,9 @@ class BaseConfig(object):
         """
          Writes the json to a yaml file
         """
-        if not self.yaml_in_file or not os.path.exists(self.yaml_in_file):
-            return {}
+        if self.yaml_in_file is None:
+            # nowhere to save
+            return
         with open(self.yaml_in_file, 'w') as yml:
             yaml.dump(data, yml, default_flow_style=False)
         utils.print_ok("Successfully updated yaml file")
@@ -100,6 +96,7 @@ class HeaderConfig(BaseConfig):
 
     def __init__(self, yaml_in_file=None):
         super(HeaderConfig, self).__init__(yaml_in_file)
+
 
 class GlobalConfig(BaseConfig):
 
