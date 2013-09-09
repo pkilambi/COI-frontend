@@ -5,7 +5,7 @@ import copy
 import pprint
 import messages
 from StringIO import StringIO
-from clint.textui import colored
+from coi.client.common import utils
 
 class InstallerError(Exception):
     """
@@ -46,7 +46,7 @@ class BaseConfig(object):
                     msg.close()
                     continue
             if suggestions and (answer not in suggestions):
-                print(colored.red("Invalid choice, please pick a valid option from the following %s" % suggestions))
+                utils.print_error("Invalid choice, please pick a valid option from the following %s" % suggestions)
                 msg.close()
                 continue
 	    return answer
@@ -57,13 +57,9 @@ class BaseConfig(object):
          generating questions, parsing the output and writing to
          a yaml file.
         """
-        if not os.path.exists(self.yaml_in_file):
-            return {}
-        print(colored.green(messages.INSTALLER_HEADER))
-        print(colored.green(self.message))
+        utils.print_ok(self.message)
         doc = self.load_yaml()
-        doc_copy = copy.deepcopy(doc)
-        for key in doc_copy.keys():
+        for key, value in doc.items():
             param = [i for i in self.params if key == i['key']]
             if not param:
                 continue
@@ -72,14 +68,16 @@ class BaseConfig(object):
                              suggestions=param['options'],
                              default=param['default'])
             if ans:
-                doc_copy[key] = ans
-        pprint.pprint(doc_copy)
-        self.write_yaml(doc_copy)
+                doc[key] = ans
+        #pprint.pprint(doc)
+        self.write_yaml(doc)
     
     def load_yaml(self):
         """
          Load a yaml file and access data
         """
+        if not self.yaml_in_file or not os.path.exists(self.yaml_in_file):
+            return {}
         with open(self.yaml_in_file, 'r') as f:
             doc = yaml.load(f)
         return doc
@@ -88,9 +86,20 @@ class BaseConfig(object):
         """
          Writes the json to a yaml file
         """
+        if not self.yaml_in_file or not os.path.exists(self.yaml_in_file):
+            return {}
         with open(self.yaml_in_file, 'w') as yml:
             yaml.dump(data, yml, default_flow_style=False)
+        utils.print_ok("Successfully updated yaml file")
 
+
+class HeaderConfig(BaseConfig):
+
+    params = []
+    message = messages.INSTALLER_HEADER
+
+    def __init__(self, yaml_in_file=None):
+        super(HeaderConfig, self).__init__(yaml_in_file)
 
 class GlobalConfig(BaseConfig):
 
@@ -167,8 +176,9 @@ class GlobalConfig(BaseConfig):
 
 
 def setup_installer():
-    global_config = GlobalConfig()
-    global_config.setup()
+    for cls in [HeaderConfig, GlobalConfig]:
+        config = cls()
+        config.setup()
 
 
 if __name__ == '__main__':
