@@ -26,7 +26,7 @@ class BaseConfig(object):
     params = []
     message = None
 
-    def __init__(self, yaml_in_file=None):
+    def __init__(self, yaml_in_file="config.yaml"):
         self.yaml_in_file = yaml_in_file
 
     def askme(self, question, suggestions=None, default=None):
@@ -57,15 +57,21 @@ class BaseConfig(object):
          generating questions, parsing the output and writing to
          a yaml file.
         """
-        doc = {}
         utils.print_ok(self.message)
-        for param in self.params:
+        doc = self.execute_params(self.params)
+        self.write_yaml(doc)
+        return doc
+
+    def execute_params(self, params):
+        doc = {}
+        for param in params:
             ans = self.askme(param['prompt'],
                              suggestions=param['options'],
                              default=param['default'])
             if ans:
                 doc[param['key']] = ans
-        self.write_yaml(doc)
+        return doc
+
 
     def load_yaml(self):
         """
@@ -76,7 +82,7 @@ class BaseConfig(object):
         with open(self.yaml_in_file, 'r') as f:
             doc = yaml.load(f)
         return doc
-
+ 
     def write_yaml(self, data):
         """
          Writes the json to a yaml file
@@ -84,7 +90,7 @@ class BaseConfig(object):
         if self.yaml_in_file is None:
             # nowhere to save
             return
-        with open(self.yaml_in_file, 'w') as yml:
+        with open(self.yaml_in_file, 'a') as yml:
             yaml.dump(data, yml, default_flow_style=False)
         utils.print_ok("Successfully updated yaml file")
 
@@ -100,7 +106,8 @@ class HeaderConfig(BaseConfig):
 
 class GlobalConfig(BaseConfig):
 
-    params = [{"prompt"  : "Please specify the domain name",
+    params = [
+              {"prompt"  : "Please specify the domain name",
                "key"     : "domain",
                "options" : None,
                "default" : "domain.name"},
@@ -108,18 +115,55 @@ class GlobalConfig(BaseConfig):
                "key"     : "operatingsystem",
                "options" : ["redhat", "ubuntu"],
                "default" : "redhat"},
+              {"prompt"  : "What Role would you like to setup",
+               "key"     : "role",
+               "options" : ["openstack",],
+               "default" : "openstack"},
               {"prompt"  : "What Scenario would you like to setup",
                "key"     : "scenario",
                "options" : ["multinode", "allinone", "multinode-ha"],
                "default" : "allinone"},
-              {"prompt"  : "List of NTP Servers to use",
+               {"prompt"  : "List of NTP Servers to use",
                "key"     : "ntp_server",
                "options" : None,
-               "default" : None,},
+               "default" : "clock.redhat.com",},
               {"prompt"  : "Verbose",
                "key"     : "verbose",
-               "options" : None,
-               "default" : False,},
+               "options" : ['y', 'n'],
+               "default" : 'n',},]
+
+    apt_params = [
+              {"prompt" : "Would you like to setup apt mirror",
+               "key"    : "apt_mirror",
+               "options": [],
+               "default": "us.archive.ubuntu.com"},
+              {"prompt" : "Would you like to setup apt cache",
+               "key"    : "apt_cache",
+               "options": [],
+               "default": "192.168.242.99"}, ]
+
+    message = "Global Configuration"
+
+    def __init__(self, yaml_in_file='config.yaml'):
+        super(GlobalConfig, self).__init__(yaml_in_file)
+
+    def setup(self):
+        doc = {}
+        utils.print_ok(self.message)
+        _basic_params = self.execute_params(self.params)
+        doc.update(_basic_params)
+        if _basic_params['operatingsystem'] == 'ubuntu':
+            _apt_params = self.execute_params(self.apt_params)
+            doc.update(_apt_params)
+        elif _basic_params['operatingsystem'] == 'redhat':
+            #do redhat specific options if any
+            pass
+        return doc
+
+
+class OpenstackConfig(BaseConfig):
+
+    params  = [
               {"prompt"  : "What type of database you like to use?",
                "key"     : "db_type",
                "options" : ['mysql', 'postgres'],
@@ -156,27 +200,70 @@ class GlobalConfig(BaseConfig):
                "key"     : "enable_ceph",
                "options" : ['y', 'n'],
                "default" : 'y',},
+              {"prompt"  : "What network service should we use?",
+               "key"     : "network_service",
+               "options" : ['neutron', 'nova'],
+               "default" : 'neutron',}]
+
+    message = "Openstack Configuration"
+
+    def __init__(self, yaml_in_file='config.yaml'):
+        super(OpenstackConfig, self).__init__(yaml_in_file)
+
+
+class NeutronConfig(OpenstackConfig):
+
+    params = [
+              {"prompt"  : "What type of network plugin should we use?",
+               "key"     : "network_plugin",
+               "options" : ['ovs', 'linuxbridge', 'cisco'],
+               "default" : 'ovs',},
+              {"prompt"  : "What network type should we use?",
+               "key"     : "network_type",
+               "options" : ['single-flat', 'provider-router', 'per-tenant-router'],
+               "default" : 'per-tenant-router',},
+              {"prompt"  : "What tenant network type should we use?",
+               "key"     : "tenant_network_type",
+               "options" : ['gre', 'vlan'],
+               "default" : 'gre'},
+               ]
+
+    message = "Neutron Configuration"
+
+    def __init__(self, yaml_in_file='config.yaml'):
+        super(NeutronConfig, self).__init__(yaml_in_file)
+   
+
+class CinderConfig(OpenstackConfig):
+
+    params = [
               {"prompt"  : "backend for cinder?",
                "key"     : "cinder_backend",
                "options" : ['iscsi',],
-               "default" : 'iscsi',},
-              {"prompt"  : "What type of networking should we use?",
-               "key"     : "network_type",
-               "options" : ['neutron', 'nova'],
-               "default" : 'neutron',},]
+               "default" : 'iscsi',},]
 
-
-    message = "Global Configuration"
+    message = "Cinder Configuration"
 
     def __init__(self, yaml_in_file='config.yaml'):
-        super(GlobalConfig, self).__init__(yaml_in_file)
+        super(CinderConfig, self).__init__(yaml_in_file)
 
-
+ 
 def setup_installer():
-    for cls in [HeaderConfig, GlobalConfig]:
+    data = {}
+    for cls in [HeaderConfig, GlobalConfig,]:
         config = cls()
-        config.setup()
-
+        doc = config.setup()
+        if doc: 
+            data.update(doc)
+    _ostack_params = OpenstackConfig().setup()
+    data.update(_ostack_params)
+    if data['network_service'] == 'neutron':
+        _neutron_params = NeutronConfig().setup()
+        data.update(_neutron_params)
+    if data['enable_cinder'] == 'y':
+        _cinder_params = CinderConfig().setup()
+        data.update(_cinder_params)    
+    print data    
 
 if __name__ == '__main__':
     setup_installer()
