@@ -6,23 +6,32 @@ WARNING = '\033[93m'
 END     = '\033[0m'
 
 
-def load_yaml(yaml_in_file):
-    """
-      Load a yaml file and access data
-    """
-    if not yaml_in_file or not os.path.exists(yaml_in_file):
-       return {}
-    with open(yaml_in_file, 'r') as f:
-        doc = yaml.load(f)
-    return doc
+class YamlParser(object):
 
-def write_yaml(yaml_in_file, data):
-    """
-     Writes the json to a yaml file
-    """
-    with open(yaml_in_file, 'a') as yml:
-        yaml.dump(data, yml, default_flow_style=False)
-    print_ok("Successfully updated yaml file")
+    def __init__(self, yaml_in_file="config.yaml"):
+        self.yaml_in_file = yaml_in_file
+
+    def load_yaml(self):
+        """
+         Load a yaml file and access data
+        """
+        if not self.yaml_in_file or not os.path.exists(self.yaml_in_file):
+            return {}
+        with open(self.yaml_in_file, 'r') as f:
+            doc = yaml.load(f)
+        return doc
+
+    def write_yaml(self, data):
+        """
+         Writes the json to a yaml file
+        """
+        if self.yaml_in_file is None:
+            # nowhere to save
+            return
+        with open(self.yaml_in_file, 'w') as yml:
+            yaml.dump(data, yml, default_flow_style=False)
+        print_ok("Successfully updated yaml file")
+
 
 def print_warn(text):
     print WARNING + text + END

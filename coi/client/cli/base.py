@@ -1,7 +1,5 @@
 #!/usr/bin/python
 import os
-import yaml
-import copy
 import pprint
 import messages
 from StringIO import StringIO
@@ -59,7 +57,6 @@ class BaseConfig(object):
         """
         utils.print_ok(self.message)
         doc = self.execute_params(self.params)
-        self.write_yaml(doc)
         return doc
 
     def execute_params(self, params):
@@ -71,28 +68,6 @@ class BaseConfig(object):
             if ans:
                 doc[param['key']] = ans
         return doc
-
-
-    def load_yaml(self):
-        """
-         Load a yaml file and access data
-        """
-        if not self.yaml_in_file or not os.path.exists(self.yaml_in_file):
-            return {}
-        with open(self.yaml_in_file, 'r') as f:
-            doc = yaml.load(f)
-        return doc
- 
-    def write_yaml(self, data):
-        """
-         Writes the json to a yaml file
-        """
-        if self.yaml_in_file is None:
-            # nowhere to save
-            return
-        with open(self.yaml_in_file, 'a') as yml:
-            yaml.dump(data, yml, default_flow_style=False)
-        utils.print_ok("Successfully updated yaml file")
 
 
 class HeaderConfig(BaseConfig):
@@ -263,7 +238,8 @@ def setup_installer():
     if data['enable_cinder'] == 'y':
         _cinder_params = CinderConfig().setup()
         data.update(_cinder_params)    
-    print data    
+    yaml_obj = utils.YamlParser()
+    yaml_obj.write_yaml(data)
 
 if __name__ == '__main__':
     setup_installer()
