@@ -1,3 +1,5 @@
+#! /usr/bin/python
+import sys
 import yaml
 
 ERROR   = '\033[91m'
@@ -42,5 +44,11 @@ def print_ok(text):
 def print_error(text):
     print ERROR + text + END
 
-
+def system_exit(code, msg=None):
+    """
+    Helper method to exist with error code and a message
+    """
+    if msg:
+        sys.stderr.write(str(msg) + '\n')
+    sys.exit(code)
 

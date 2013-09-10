@@ -32,22 +32,25 @@ class BaseConfig(object):
          Prompt the questions for user input
         """
         while True:
-            msg = StringIO()
-            msg.write(question)
-            msg.seek(0)
+            try:
+                msg = StringIO()
+                msg.write(question)
+                msg.seek(0)
 
-            answer = raw_input(msg.read() + "[%s]" % default + ": ")
-            if not len(answer):
-                if default is not None:
-                    answer = default
-                else:
+                answer = raw_input(msg.read() + "[%s]" % default + ": ")
+                if not len(answer):
+                    if default is not None:
+                        answer = default
+                    else:
+                        msg.close()
+                        continue
+                if suggestions and (answer not in suggestions):
+                    utils.print_error("Invalid choice, please pick a valid option from the following %s" % suggestions)
                     msg.close()
                     continue
-            if suggestions and (answer not in suggestions):
-                utils.print_error("Invalid choice, please pick a valid option from the following %s" % suggestions)
-                msg.close()
-                continue
-	    return answer
+	        return answer
+            except (EOFError, KeyboardInterrupt):
+                utils.system_exit(0, "\n User interrupted process.") 
 
     def setup(self):
         """
